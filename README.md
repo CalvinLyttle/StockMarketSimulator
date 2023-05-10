@@ -41,7 +41,3 @@ bash init.sh -c 5 -p 3000
 ```
 
 **Note**: We recommend running this on a Linux machine.
-
-## Credits
-
-Initial stock data was taken from [this Kaggle dataset](https://www.kaggle.com/datasets/camnugent/sandp500).
