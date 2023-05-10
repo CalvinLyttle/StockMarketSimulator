@@ -3,6 +3,9 @@ import builtins
 import socket
 import struct
 import sys
+import random
+import threading
+import json
 
 import colorama
 
@@ -34,6 +37,22 @@ if PORT < 1024 or PORT > 65535:
     print("Port number must be between 0 and 65535")
     exit(1)
 
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.bind((GROUP, PORT))
+
+actions = [
+    {
+        "action": "BUY",
+        "stock": "AAPL",
+        "price": 170.20
+    },
+    {
+        "action": "SELL",
+        "stock": "AMZN",
+        "price": 109.32
+    }
+]
 
 def print(*args, **kwargs):
     """
@@ -48,7 +67,13 @@ def print(*args, **kwargs):
 {colorama.Fore.RESET}]", *args, **kwargs)
                           
 
-def main():
+def send():
+    while True:
+        action = random.choice(actions)
+        message = json.dumps(action).encode('utf-8')
+        sock.sendto(message, (GROUP, PORT))
+
+def recv():
     """
     This initializes the multicast group and port. Then it listens for
     multicast messages and prints them to the console.
@@ -56,11 +81,6 @@ def main():
     @return: None
     """  
     print(f"Listening for multicast messages on {GROUP}:{PORT}")
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((GROUP, PORT))
-        
     mreq = struct.pack("4sl", socket.inet_aton(GROUP), socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
@@ -70,8 +90,18 @@ def main():
 
 if "__main__" == __name__:
     """ This is executed when run from the command line """
+
+    # Init two sockets, one for receiving multicast messages, one for sending trade requests
+    recv_socket = threading.Thread(target=recv)
+    send_socket = threading.Thread(target=send)
+    
     try:
-        main()
+        # Start both sockets
+        recv_socket.start()
+        send_socket.start()
+
     except KeyboardInterrupt:
+        recv_socket.join()
+        send_socket.join()
         sys.exit(0)
 

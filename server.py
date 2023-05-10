@@ -2,6 +2,7 @@ import argparse
 import builtins
 import socket
 import sys
+import json
 
 import colorama
 
@@ -53,13 +54,23 @@ def main():
     @return: None
     """
     TTL = 2
-
-    print(f"Sending multicast message to {GROUP}:{PORT}")
-
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)
 
-    sock.sendto(b"robot", (GROUP, PORT))
+
+    while True:
+        data = sock.recv(10240)
+        if data:
+            # print(f"Sending multicast message to {GROUP}:{PORT}")
+            
+            message = json.loads(data.decode('utf-8'))
+            action = message.action
+            stock = message.stock
+            price = message.price
+
+            message = f"{action} order for {stock} at {price}"
+            sock.sendto(message.encode('utf-8'), (GROUP, PORT))
+
 
 
 if "__main__" == __name__:
