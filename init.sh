@@ -7,9 +7,12 @@
 TXT_DEFAULT='\033[0m'
 TXT_GREY='\033[2m'
 
+stty -echoctl # hide ^C
+
 # Kill all processes on Ctrl-C
 handle_sigint() {
     echo -e "[${TXT_GREY}init${TXT_DEFAULT}] Killing server and clients..."
+
     # shellcheck disable=SC2046
     kill $(jobs -p) >/dev/null 2>&1
     echo -e "[${TXT_GREY}init${TXT_DEFAULT}] Done."
@@ -64,7 +67,7 @@ python server.py -p "$PORT" -g "$GROUP" &
 
 # Run multiple clients in the background
 echo -e "[${TXT_GREY}init${TXT_DEFAULT}] Starting ${NUM_CLIENTS} clients..."
-for i in $(seq 1 "$NUM_CLIENTS"); do
+for i in $(seq 0 "$NUM_CLIENTS"); do
     if [ "$i" -eq "$NUM_CLIENTS" ]; then
         # Run last client in the foreground
         python client.py -c "$i" -p "$PORT" -g "$GROUP"

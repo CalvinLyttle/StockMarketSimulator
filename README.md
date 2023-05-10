@@ -1,6 +1,6 @@
 # CS-521 Group Project - Stock Market Simulator
 
-### Stevens Institute of Technology, Spring 2023.
+### Stevens Institute of Technology, Spring 2023
 
 I pledge my honor that I have abided by the Stevens Honor System.
 

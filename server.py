@@ -1,6 +1,7 @@
 import argparse
 import builtins
 import socket
+import sys
 
 import colorama
 
@@ -31,16 +32,25 @@ def print(*args, **kwargs):
     """
     This is a wrapper around the built-in print function that adds the
     server to the beginning of the message.
+    
+    @param args: The arguments to pass to the print function.
+    @param kwargs: The keyword arguments to pass to the print function.
+    @return: None
     """
-    return builtins.print(f"[{colorama.Fore.YELLOW}server\
+    return builtins.print(f"[{colorama.Fore.YELLOW}server-0\
 {colorama.Fore.RESET}]", *args, **kwargs)
      
 
 
 def main():
     """
-    Initializes the multicast group, port, and TTL. Then sends the message
-    "robot" to the multicast group.
+    Basic server functionality:
+    - Initializes the multicast group, port, and TTL. 
+    - Sends the message "server online" to the multicast group.
+    - Waits for clients to issue buy/sell commands.
+    - Broadcasts updates to all clients.
+    
+    @return: None
     """
     TTL = 2
 
@@ -54,4 +64,7 @@ def main():
 
 if "__main__" == __name__:
     """ This is executed when run from the command line """
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(0)

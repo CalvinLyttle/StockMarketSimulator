@@ -2,6 +2,7 @@ import argparse
 import builtins
 import socket
 import struct
+import sys
 
 import colorama
 
@@ -38,6 +39,10 @@ def print(*args, **kwargs):
     """
     This is a wrapper around the built-in print function that adds the
     client number to the beginning of the message.
+    
+    @param args: The arguments to pass to the print function.
+    @param kwargs: The keyword arguments to pass to the print function.
+    @return: None
     """
     return builtins.print(f"[{colorama.Fore.GREEN}client-{CLIENT_NUM}\
 {colorama.Fore.RESET}]", *args, **kwargs)
@@ -47,6 +52,8 @@ def main():
     """
     This initializes the multicast group and port. Then it listens for
     multicast messages and prints them to the console.
+    
+    @return: None
     """  
     print(f"Listening for multicast messages on {GROUP}:{PORT}")
 
@@ -62,4 +69,8 @@ def main():
 
 if "__main__" == __name__:
     """ This is executed when run from the command line """
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(0)
+
