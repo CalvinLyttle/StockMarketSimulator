@@ -17,8 +17,11 @@ Authors:
 Start by installing the required packages:
 
 ```bash
+# Initialize virtual environment
 python3 -m venv venv
 source venv/bin/activate
+
+# Install requirements
 pip install -r requirements.txt
 ```
 
@@ -26,10 +29,14 @@ Then, run the init script to run the server and clients:
 
 ```bash
 # To run the server and 10 clients on port 5000:
-./init.sh
+bash init.sh
 
 # To run the server and 5 clients on port 3000:
-./init.sh -c 5 -p 3000
+bash init.sh -c 5 -p 3000
 ```
 
 **Note**: We recommend running this on a Linux machine.
+
+## Credits
+
+Initial stock data was taken from [this Kaggle dataset](https://www.kaggle.com/datasets/camnugent/sandp500).
