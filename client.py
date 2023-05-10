@@ -1,11 +1,13 @@
 import argparse
 import builtins
+import json
+import math
+import random
 import socket
 import struct
 import sys
-import random
 import threading
-import json
+import time
 
 import colorama
 
@@ -32,22 +34,40 @@ GROUP = args.group if args.group else '224.1.1.1'
 
 if CLIENT_NUM < 0 or CLIENT_NUM > 10000:
     print("Client number must be between 0 and 10000")
-    exit(1)
+    sys.exit(1)
 if PORT < 1024 or PORT > 65535:
     print("Port number must be between 0 and 65535")
-    exit(1)
+    sys.exit(1)
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-sock.bind((GROUP, PORT))
+# UDP Multicast Socket
+broadcast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+broadcast_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+broadcast_sock.bind((GROUP, PORT))
+
+mreq = struct.pack("4sl", socket.inet_aton(GROUP), socket.INADDR_ANY)
+broadcast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
+# UDP Unicast Socket
+# TODO: Turn this into unicast socket
+UDP_PORT = PORT + 1
+unicast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+
+# TCP Socket
+# TODO: Ensure this is a TCP socket
+TCP_PORT = PORT + 2
+tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+tcp_sock.bind((GROUP, TCP_PORT))
 
 actions = [
     {
+        "client": CLIENT_NUM,
         "action": "BUY",
         "stock": "AAPL",
         "price": 170.20
     },
     {
+        "client": CLIENT_NUM,
         "action": "SELL",
         "stock": "AMZN",
         "price": 109.32
@@ -68,10 +88,19 @@ def print(*args, **kwargs):
                           
 
 def send():
+    """
+    This sends a random trade action to the server over
+    UDP unicast every 1-10 seconds.
+    
+    @return: None
+    """
     while True:
         action = random.choice(actions)
+        print(f"Sending request to {action['action']} \
+{action['stock']} at ${action['price']} to server...")
         message = json.dumps(action).encode('utf-8')
-        sock.sendto(message, (GROUP, PORT))
+        unicast_sock.sendto(message, (GROUP, UDP_PORT))
+        time.sleep(math.floor(random.random() * 10) + 1)
 
 def recv():
     """
@@ -81,12 +110,27 @@ def recv():
     @return: None
     """  
     print(f"Listening for multicast messages on {GROUP}:{PORT}")
-    mreq = struct.pack("4sl", socket.inet_aton(GROUP), socket.INADDR_ANY)
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
     while True:
-        # Check sequence number.
-        print(sock.recv(10240))
+        data = broadcast_sock.recv(1024).decode('utf-8')
+
+        if data:
+            try:
+                message = json.loads(data)
+                print(f"Recieved broadcast that client {message['client']} issued \
+{message['action']} {message['stock']} at ${message['price']}")
+            except json.decoder.JSONDecodeError:
+                print("Received invalid JSON message")
+                continue
+            
+            # Check for sequence number
+            # if message["seq"] == seq:
+            #     print(f"Received message: {message}")
+            #     seq += 1
+            # else:
+            #     print(f"Received out-of-order message: {message}")
+            #     # TODO: TCP connection to request retransmission
+                
 
 if "__main__" == __name__:
     """ This is executed when run from the command line """
@@ -101,7 +145,5 @@ if "__main__" == __name__:
         send_socket.start()
 
     except KeyboardInterrupt:
-        recv_socket.join()
-        send_socket.join()
         sys.exit(0)
 
