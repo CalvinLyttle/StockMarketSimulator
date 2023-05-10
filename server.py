@@ -57,7 +57,7 @@ def send_udp():
     
     @return: None
     """
-    print(f"Sending multicast message to {GROUP}:{PORT}")
+    print(f"Ready to send multicast messages to {GROUP}:{PORT}")
     TTL = 2
     broadcast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     broadcast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)
@@ -89,26 +89,27 @@ at {message['price']} from client {message['client']}. Broadcasting to group..."
             RECORDS.append(message)
             broadcast_sock.sendto(json.dumps(message).encode('utf-8'), (GROUP, PORT))
 
-# TODO: Implement TCP functionality
 def send_tcp():
     """
     Basic server functionality:
     - Recieve TCP connections from clients with a sequence number.
     - Send the client that sequence number's trade record.
     """
-    sock = socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', TCP_PORT))
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind((TCP_IP, TCP_PORT))
     sock.listen(1)
-    print('The server is ready to receive')
+    print(f'Ready to recieve TCP fallback requests on {TCP_IP}:{TCP_PORT}')
 
     while True:
         connectionSocket, addr = sock.accept()
-        data = connectionSocket.recv(1024).decode()
-        message = json.loads(data.decode('utf-8'))
+        data = connectionSocket.recv(1024).decode('utf-8')
+        message = json.loads(data)
         seq = message["seq"]
-        resp = RECORDS[seq]
+        resp_dict = RECORDS[seq]
+        resp_dump = json.dumps(resp_dict)
         
-        connectionSocket.send(resp.encode())
+        connectionSocket.send(resp_dump.encode())
         connectionSocket.close()
 
 
@@ -117,12 +118,14 @@ if "__main__" == __name__:
     
     # Initialize the TCP and UDP threads
     send_udp_thread = threading.Thread(target=send_udp)
-    # send_tcp_thread = threading.Thread(target=send_tcp, daemon=True)
+    send_tcp_thread = threading.Thread(target=send_tcp)
     
     try:
         # Start both the UDP and TCP threads
         send_udp_thread.start()
-        # send_tcp_thread.start()
+        send_tcp_thread.start()
         
     except KeyboardInterrupt:
+        send_udp_thread.join()
+        send_tcp_thread.join()
         sys.exit(0)
