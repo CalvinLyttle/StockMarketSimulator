@@ -61,15 +61,13 @@ done
 # Install dependencies
 pip install -r requirements.txt >/dev/null
 
-# Run server in background
-echo -e "[${TXT_GREY}init${TXT_DEFAULT}] Starting server..."
+# Run server and multiple clients in the background
+echo -e "[${TXT_GREY}init${TXT_DEFAULT}] Starting server and ${NUM_CLIENTS} clients..."
 python server.py -p "$PORT" -g "$GROUP" &
 
-# Run multiple clients in the background
-echo -e "[${TXT_GREY}init${TXT_DEFAULT}] Starting ${NUM_CLIENTS} clients..."
 for i in $(seq 0 "$NUM_CLIENTS"); do
     if [ "$i" -eq "$NUM_CLIENTS" ]; then
-        # Run last client in the foreground
+        # Run last client in the foreground to keep the terminal open
         python client.py -c "$i" -p "$PORT" -g "$GROUP"
         continue
     fi

@@ -65,6 +65,7 @@ def main():
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
     while True:
+        # Check sequence number.
         print(sock.recv(10240))
 
 if "__main__" == __name__:
