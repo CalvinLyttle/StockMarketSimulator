@@ -35,6 +35,9 @@ __license__ = "MIT"
 # For All:
 # TODO Presentation slides
 
+with open('actions.json') as actions_json:
+    actions = json.load(actions_json)["actions"]
+
 # Check if the client number or port number was specified
 # Use the default values if they were not specified
 parser = argparse.ArgumentParser()
@@ -70,20 +73,6 @@ unicast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_U
 # TCP Socket
 TCP_PORT = PORT + 2
 
-actions = [
-    {
-        "client": CLIENT_NUM,
-        "action": "BUY",
-        "stock": "AAPL",
-        "price": 170.20
-    },
-    {
-        "client": CLIENT_NUM,
-        "action": "SELL",
-        "stock": "AMZN",
-        "price": 109.32
-    }
-]
 
 def print(*args, **kwargs):
     """
@@ -107,6 +96,7 @@ def send():
     """
     while True:
         action = random.choice(actions)
+        action["client"] = CLIENT_NUM
         print(f"Sending request to {action['action']} \
 {action['stock']} at ${action['price']} to server...")
         message = json.dumps(action).encode('utf-8')
@@ -128,11 +118,9 @@ def send_tcp_fallback(seq):
         recieved_message = json.loads(data)
     except json.decoder.JSONDecodeError:
         print("Received invalid JSON message")
-        sys.exit(1)
     
     print(f"Received missing trade: {recieved_message}")
     tcp_sock.close()
-    sys.exit(0)
 
 def recv():
     """
@@ -146,8 +134,8 @@ def recv():
     while True:
         data = broadcast_sock.recv(1024).decode('utf-8')
         
-        # Randomly drop messages
-        if random.random() < 0.1:
+        # Randomly drop messages, set higher to show > 1 missed packets
+        if random.random() < 0.10:
             print("Simulating dropped message")
             continue
 
@@ -163,12 +151,14 @@ def recv():
             if message["seq"] > seq:
                 print(f"Received out of order message. \
 Expected {seq}, got {message['seq']}")
-                send_tcp = threading.Thread(send_tcp_fallback(seq))
-                send_tcp.start()
-                seq = message["seq"]
-                
-                
 
+                # Iterate through just one or all missed packets.
+                for miss_seq in range(seq, message['seq']):
+                    send_tcp = threading.Thread(send_tcp_fallback(miss_seq))
+                    send_tcp.start()
+                    seq = message["seq"]
+                    send_tcp.join()
+                    
             seq+=1
 
 
