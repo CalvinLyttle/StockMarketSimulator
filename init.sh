@@ -63,13 +63,12 @@ pip install -r requirements.txt >/dev/null
 
 # Run server and multiple clients in the background
 echo -e "[${TXT_GREY}init${TXT_DEFAULT}] Starting server and ${NUM_CLIENTS} clients..."
-python server.py -p "$PORT" -g "$GROUP" &
 
-for i in $(seq 0 "$NUM_CLIENTS"); do
-    if [ "$i" -eq "$NUM_CLIENTS" ]; then
-        # Run last client in the foreground to keep the terminal open
-        python client.py -c "$i" -p "$PORT" -g "$GROUP"
-        continue
-    fi
+for i in $(seq 1 "$NUM_CLIENTS"); do
     python client.py -c "$i" -p "$PORT" -g "$GROUP" &
+
+    # Ensure clients are started in order
+    sleep 0.15
 done
+
+python server.py -p "$PORT" -g "$GROUP"
