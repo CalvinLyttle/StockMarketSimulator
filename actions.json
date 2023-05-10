@@ -1,0 +1,84 @@
+{
+  "actions": [
+    {
+      "action": "BUY",
+      "stock": "AAPL",
+      "price": 170.2
+    },
+    {
+      "action": "SELL",
+      "stock": "AAPL",
+      "price": 173.2
+    },
+    {
+      "action": "BUY",
+      "stock": "AMZN",
+      "price": 112.73
+    },
+    {
+      "action": "SELL",
+      "stock": "AMZN",
+      "price": 109.32
+    },
+    {
+      "action": "BUY",
+      "stock": "MSFT",
+      "price": 312.31
+    },
+    {
+      "action": "SELL",
+      "stock": "MSFT",
+      "price": 311.89
+    },
+    {
+      "action": "BUY",
+      "stock": "GME",
+      "price": 20.7
+    },
+    {
+      "action": "SELL",
+      "stock": "GME",
+      "price": 420.69
+    },
+    {
+      "action": "BUY",
+      "stock": "AMC",
+      "price": 5.49
+    },
+    {
+      "action": "SELL",
+      "stock": "AMC",
+      "price": 666.66
+    },
+    {
+      "action": "BUY",
+      "stock": "NVDA",
+      "price": 288.85
+    },
+    {
+      "action": "SELL",
+      "stock": "NVDA",
+      "price": 290.69
+    },
+    {
+      "action": "BUY",
+      "stock": "PYPL",
+      "price": 63.1
+    },
+    {
+      "action": "SELL",
+      "stock": "PYPL",
+      "price": 62.98
+    },
+    {
+      "action": "BUY",
+      "stock": "META",
+      "price": 231.98
+    },
+    {
+      "action": "SELL",
+      "stock": "META",
+      "price": 233.08
+    }
+  ]
+}
