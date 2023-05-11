@@ -71,4 +71,5 @@ for i in $(seq 1 "$NUM_CLIENTS"); do
     sleep 0.15
 done
 
+# Run server in the foreground to capture Ctrl-C
 python server.py -p "$PORT" -g "$GROUP"
