@@ -97,7 +97,7 @@ def send_udp():
             message["seq"] = seq
             seq += 1
             
-            print(f"Recieved request to {message['action']} {message['stock']} \
+            print(f"Received request to {message['action']} {message['stock']} \
 at {message['price']} from client {message['client']}. Broadcasting to group...")
             
             RECORDS.append(message)

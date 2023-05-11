@@ -160,7 +160,7 @@ def recv():
         if data:
             try:
                 message = json.loads(data)
-                print(f"Recieved broadcast that client {message['client']} issued \
+                print(f"Received broadcast that client {message['client']} issued \
 {message['action']} {message['stock']} at ${message['price']}")
             except json.decoder.JSONDecodeError:
                 print("Received invalid JSON message")
