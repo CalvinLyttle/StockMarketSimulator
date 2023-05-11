@@ -16,23 +16,39 @@ __authors__ = "Ari Birnbaum, Calvin Lyttle, Grace Mattern, and Kevin Ha"
 __version__ = "0.1.0"
 __license__ = "MIT"
 
+# Disable traceback when exiting with Ctrl+C
+sys.tracebacklimit = 0
+
+# Check CLI arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-p", "--port", type=int, help="port number")
-parser.add_argument("-g", "--group", type=str, help="multicast group")
+parser.add_argument("-g", "--group",    type=str, help="multicast group")
+parser.add_argument("-p", "--port",     type=int, help="multicast port number")
+parser.add_argument("-u", "--udp",      type=int, help="UDP port number")
+parser.add_argument("-i", "--ip",       type=str, help="TCP IP address")
+parser.add_argument("-t", "--tcp",      type=int, help="TCP port number")
 args = parser.parse_args()
 
-TCP_IP = '127.0.0.1'
-PORT = args.port if args.port else 5000
-GROUP = args.group if args.group else '224.1.1.1'
-RECORDS = []
+# Define constants
+GROUP = args.group if args.group else '224.1.1.1'   # Default multicast group
+MULTICAST_PORT = args.port if args.port else 5000   # Default mutlicast port number
+UDP_PORT = args.udp if args.udp else 5001           # Default UDP port number
+TCP_IP = args.ip if args.ip else '127.0.0.1'        # Default TCP IP address
+TCP_PORT = args.tcp if args.tcp else 5002           # Default TCP port number
+RECORDS = []                                        # List of trade records
 
-if PORT < 1024 or PORT > 65535:
-    print("Port number must be between 0 and 65535")
+if MULTICAST_PORT < 1024 or MULTICAST_PORT > 65535:
+    print("Mutlicast port number must be between 0 and 65535")
     sys.exit(1)
     
-UDP_PORT = PORT + 1
-TCP_PORT = PORT + 2
-
+if UDP_PORT < 1024 or UDP_PORT > 65535:
+    print("UDP port number must be between 0 and 65535")
+    sys.exit(1)
+    
+if TCP_PORT < 1024 or TCP_PORT > 65535:
+    print("TCP port number must be between 0 and 65535")
+    sys.exit(1)
+    
+    
 def print(*args, **kwargs):
     """
     This is a wrapper around the built-in print function that adds the
@@ -50,16 +66,18 @@ def print(*args, **kwargs):
 def send_udp():
     """
     Basic server functionality:
-    - Initializes the multicast group, port, and TTL. 
-    - Sends the message "server online" to the multicast group.
-    - Waits for clients to issue buy/sell commands.
-    - Broadcasts updates to all clients.
+    - Initializes the multicast and unicast sockets.
+    - Waits for clients to issue buy/sell commands over unicast.
+    - Adds the trade record to the RECORDS list.
+    - Broadcasts updates to all clients over multicast with a sequence number.
     
     @return: None
     """
-    print(f"Ready to send multicast messages to {GROUP}:{PORT}")
+    print(f"Ready to send multicast messages to {GROUP}:{MULTICAST_PORT}")
+    
     TTL = 2
-    broadcast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    broadcast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 
+                                   socket.IPPROTO_UDP)
     broadcast_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)
     
     unicast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -79,32 +97,34 @@ def send_udp():
             message["seq"] = seq
             seq += 1
             
-            print(f"Recieved request to {message['action']} {message['stock']} \
+            print(f"Received request to {message['action']} {message['stock']} \
 at {message['price']} from client {message['client']}. Broadcasting to group...")
             
-            # message["action"]
-            # message["stock"]
-            # message["price"]
-            
             RECORDS.append(message)
-            broadcast_sock.sendto(json.dumps(message).encode('utf-8'), (GROUP, PORT))
+            broadcast_sock.sendto(json.dumps(message).encode('utf-8'), 
+                                  (GROUP, MULTICAST_PORT))
 
 def send_tcp():
     """
     Basic server functionality:
     - Recieve TCP connections from clients with a sequence number.
+    - Look up the trade record for that sequence number.
     - Send the client that sequence number's trade record.
+    
+    @return: None
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind((TCP_IP, TCP_PORT))
     sock.listen(1)
+    
     print(f'Ready to recieve TCP fallback requests on {TCP_IP}:{TCP_PORT}')
 
     while True:
         connectionSocket, addr = sock.accept()
         data = connectionSocket.recv(1024).decode('utf-8')
         message = json.loads(data)
+        
         seq = message["seq"]
         resp_dict = RECORDS[seq]
         resp_dump = json.dumps(resp_dict)
